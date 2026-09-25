@@ -1,0 +1,84 @@
+# Build the medisort desktop app for macOS, Windows and Linux and publish the
+# installers to a GitHub Release. Runs when a version tag like v1.0.0 is pushed.
+name: Release desktop app
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin --bundles app,dmg
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin --bundles app,dmg
+          - platform: windows-latest
+            target: ""
+            args: --bundles nsis
+          - platform: ubuntu-22.04
+            target: ""
+            args: --bundles deb,appimage
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+
+      - name: Install JavaScript dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: medisort ${{ github.ref_name }}
+          releaseBody: |
+            medisort: sort doctor bills, prescriptions and medicine bills into
+            one PDF, by date, with claim-form data pulled out for you.
+            No uploads, no file size limit, works offline.
+
+            **Which file do I need?**
+            - macOS with Apple Silicon (M1 and newer): `medisort_*_aarch64.dmg`
+            - macOS with an Intel processor: `medisort_*_x64.dmg`
+            - Windows 10/11: `medisort_*_x64-setup.exe`
+            - Ubuntu/Debian: `medisort_*_amd64.deb` (other Linux: `.AppImage`)
+
+            **First launch:** the app isn't signed with a paid certificate yet.
+            On macOS, if it says the app "is damaged", open Terminal and run:
+            `xattr -cr /Applications/medisort.app`, then open medisort again.
+            On Windows, click More info, then Run anyway.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

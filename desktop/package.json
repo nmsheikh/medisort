@@ -1,0 +1,16 @@
+{
+  "name": "medisort-desktop",
+  "private": true,
+  "version": "1.0.0",
+  "description": "medisort desktop app (Tauri): arrange medical bills into one sorted PDF, on your own computer",
+  "scripts": {
+    "tauri": "tauri",
+    "build:web": "node scripts/build-dist.mjs",
+    "prepare-dist": "npm run build:web",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.5"
+  }
+}

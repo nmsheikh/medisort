@@ -1,0 +1,21 @@
+[package]
+name = "medisort"
+version = "1.0.0"
+description = "medisort: arrange medical bills into one sorted PDF, on your own computer"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+
+# Keep the app small.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

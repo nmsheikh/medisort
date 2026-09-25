@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>medisort</title>
+<meta name="description" content="Sort doctor bills, prescriptions and medicine bills into one PDF by date, with claim-form data pulled out for you. Runs on your device - nothing is uploaded.">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/" class="brand" aria-label="medisort home">
+    <img class="logo" src="logo.svg" alt="" width="34" height="34"><span>medisort</span>
+  </a>
+  <div class="bar-actions">
+    <a class="get-app web-only" href="https://github.com/nmsheikh/medisort/releases/latest">Download app</a>
+  </div>
+</header>
+
+<main>
+  <h1>Arrange medical bills</h1>
+  <p class="lead">Sort doctor bills, prescriptions and medicine bills into one PDF &mdash; by date, then doctor bill, prescription, medicine bill &mdash; with claim data pulled out for you. Everything runs on your device; files are never uploaded.</p>
+
+  <!-- Step 1: upload -->
+  <div id="stepUpload" class="step">
+    <label class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="application/pdf,image/*" multiple hidden>
+      <div class="dz-main">Select PDFs and images</div>
+      <div class="dz-sub">or drop them here. You can add several at once.</div>
+      <p class="dz-warn" id="dzWarn" hidden></p>
+    </label>
+  </div>
+
+  <!-- Step 2: review, extract & sort, download -->
+  <div id="stepReview" class="step wide card" hidden>
+    <div class="files-head">
+      <span class="files-count" id="filesCount"></span>
+    </div>
+    <div class="filelist" id="fileList"></div>
+
+    <div class="picker-bar">
+      <span class="hint grow" id="medCount"></span>
+    </div>
+    <p class="hint">Check the date and document type medisort found for each page, and fix anything flagged for review.</p>
+    <div class="pages" id="pageGrid"></div>
+
+    <div class="picker-bar extract-bar">
+      <span class="hint grow">When everything above looks right, extract the claim data and sort the documents by date (doctor bill, then prescription, then medicine bill).</span>
+      <button type="button" class="primary sm" id="extractSortBtn" disabled>Extract and sort</button>
+    </div>
+
+    <div class="claims-wrap" id="claimsWrap" hidden>
+      <div class="picker-bar">
+        <span class="hint grow">Extracted claim data</span>
+        <button type="button" class="ghost sm" id="claimAddLine">Add Line</button>
+        <button type="button" class="ghost sm" id="claimDelLine">Delete Line</button>
+        <button type="button" class="ghost sm" id="claimCalc">Calculate</button>
+      </div>
+      <div class="claims-scroll"><table class="claims-grid" id="claimsGrid"></table></div>
+      <p class="hint" id="claimTotal"></p>
+    </div>
+
+    <p class="error" id="errorMsg" hidden></p>
+    <div class="actions">
+      <button type="button" class="ghost" id="startOverBtn">Start over</button>
+      <button type="button" class="primary" id="downloadPdfBtn" hidden>Download PDF</button>
+    </div>
+  </div>
+
+  <!-- Step 3: done -->
+  <div id="stepDone" class="step card center" hidden>
+    <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
+    <h2>All set</h2>
+    <p class="saved-note" id="doneMeta"></p>
+    <a class="primary" id="saveBtn" download>Download medical-records.pdf</a>
+    <button type="button" class="link" id="againBtn">Arrange more bills</button>
+  </div>
+</main>
+
+<footer>
+  <p>Files are processed in memory on your own device and never uploaded. <a href="https://github.com/nmsheikh/medisort">Source on GitHub</a></p>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Page with folded corner -->
+  <path d="M16 4h24l16 16v36a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4z" fill="#e4e6eb"/>
+  <path d="M40 4v12a4 4 0 0 0 4 4h12z" fill="#c3c7d0"/>
+  <!-- Medical cross badge -->
+  <rect x="8" y="31" width="40" height="20" rx="10" fill="#e2562a"/>
+  <path d="M28 36h4v5h5v4h-5v5h-4v-5h-5v-4h5z" fill="#fff"/>
+</svg>
