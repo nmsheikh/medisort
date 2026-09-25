@@ -234,6 +234,13 @@ body[data-desktop="1"] .web-only { display: none !important; }
 .extract-bar { justify-content: space-between; }
 .extract-bar .hint { text-align: left; }
 .extract-bar button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+/* On a narrow phone a wide hint sentence squeezed next to a button (centered
+   on the button's short height) reads worse than the two stacked. */
+@media (max-width: 560px) {
+  .extract-bar, .claims-wrap .picker-bar { flex-direction: column; align-items: stretch; }
+  .claims-wrap .picker-bar .hint { text-align: left; }
+  .extract-bar button { width: 100%; justify-content: center; }
+}
 .pages {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px;
   margin-top: 14px; max-height: 62vh; overflow-y: auto; padding: 4px;
@@ -249,6 +256,7 @@ body[data-desktop="1"] .web-only { display: none !important; }
 .med-page img { aspect-ratio: 1 / 1.3; object-fit: cover; }
 .med-page.needs-review { border-color: var(--accent); }
 .med-flag { position: absolute; top: 12px; left: 12px; }
+.med-remove { position: absolute; top: 7px; right: 7px; z-index: 2; box-shadow: 0 1px 4px rgba(28, 26, 23, .16); }
 .med-fields { display: grid; gap: 6px; margin-top: 9px; }
 .med-fields select, .med-fields input[type="date"] {
   width: 100%; padding: 7px 9px; font: inherit; font-size: 13px; color: var(--text); background: var(--surface);

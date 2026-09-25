@@ -183,7 +183,6 @@ function initMedicalReview() {
       medUnits = data.units;
       sortMedUnits();
       renderMedicalReview();
-      $("extractSortBtn").disabled = false;
     } catch (e) {
       grid.innerHTML = `<div class="pages-msg">${esc(e.message)}</div>`;
     } finally {
@@ -220,6 +219,7 @@ function renderMedicalReview() {
     const flagged = !u.date || u.type === "other" || notMedical;
     return `
     <div class="page med-page${flagged ? " needs-review" : ""}" data-i="${i}">
+      <button type="button" class="mini med-remove" data-act="remove-page" title="Not part of this batch - remove it" aria-label="Remove this page">${xIcon()}</button>
       <img src="${u.thumb}" alt="Page ${i + 1}">
       ${flagged ? `<span class="badge med-flag">${eyeIcon()} ${notMedical ? "Not medical" : "Needs review"}</span>` : ""}
       <div class="med-fields">
@@ -243,10 +243,21 @@ function renderMedicalReview() {
       $("claimsWrap").hidden = true;
       $("downloadPdfBtn").hidden = true;
     }));
+    // A page that genuinely isn't part of this claim (a stray photo, a resume, a
+    // duplicate) has no valid type to pick - "Extract and sort" would otherwise
+    // stay blocked forever, since neither "Other" nor "Not a medical document"
+    // count as resolved. Dropping it from medUnits is the only way out.
+    card.querySelector("[data-act='remove-page']").addEventListener("click", () => {
+      medUnits.splice(i, 1);
+      renderMedicalReview();
+      $("claimsWrap").hidden = true;
+      $("downloadPdfBtn").hidden = true;
+    });
   });
 
   const flaggedCount = medUnits.filter((u) => !u.date || u.type === "other" || u.type === "not-medical").length;
   $("medCount").textContent = `${medUnits.length} page${medUnits.length === 1 ? "" : "s"}${flaggedCount ? `, ${flaggedCount} need${flaggedCount === 1 ? "s" : ""} review` : ""}`;
+  $("extractSortBtn").disabled = medUnits.length === 0;
 }
 
 // ---------- claims data grid ----------
