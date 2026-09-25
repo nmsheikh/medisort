@@ -507,11 +507,29 @@ async function finalizeMedicalBills(fd) {
   return sendBytes(await save(out), "medical-records.pdf");
 }
 
+// ---------- first-page thumbnail (grid view of uploaded files) ----------
+
+async function firstPageThumb(fd) {
+  const f = fd.get("files");
+  if (!f || !isPdfLike(f)) throw new ToolError("Not a PDF.");
+  const doc = await openPdfjs(f);
+  try {
+    const page = await doc.getPage(1);
+    const base = page.getViewport({ scale: 1 });
+    const canvas = await renderPage(page, THUMB_WIDTH / base.width);
+    page.cleanup();
+    return json({ src: canvas.toDataURL("image/jpeg", 0.75) });
+  } finally {
+    closePdfjs(doc);
+  }
+}
+
 // ---------- router ----------
 
 const ROUTES = {
   "/api/analyze-medical-bills": analyzeMedicalBills,
   "/api/finalize-medical-bills": finalizeMedicalBills,
+  "/api/thumbnails": firstPageThumb,
 };
 
 export async function handle(url, fd) {

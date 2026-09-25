@@ -35,8 +35,12 @@
 
   <!-- Step 2: review, extract & sort, download -->
   <div id="stepReview" class="step wide card" hidden>
-    <div class="files-head">
+    <div class="files-head" id="filesHead">
       <span class="files-count" id="filesCount"></span>
+      <div class="view-switch" id="viewSwitch" role="group" aria-label="File view">
+        <button type="button" data-view="list" title="List view" aria-label="List view"><svg class="ui" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+        <button type="button" data-view="grid" title="Grid view" aria-label="Grid view"><svg class="ui" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></button>
+      </div>
     </div>
     <div class="filelist" id="fileList"></div>
 

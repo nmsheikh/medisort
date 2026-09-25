@@ -16,6 +16,8 @@ let files = [];
 let medUnits = [];
 let claimRows = [];
 let downloadUrl = null;
+let fileView = localStorage.getItem("medisort:fileView") === "grid" ? "grid" : "list";
+const thumbCache = new Map(); // File -> thumbnail src (data URL or object URL)
 
 const BILL_TYPE_LABELS = {
   doctor: "Doctor bill", prescription: "Prescription", medicine: "Medicine bill",
@@ -58,12 +60,23 @@ function addFiles(list) {
 
 function renderFileList() {
   const list = $("fileList");
-  list.innerHTML = files.map((f, i) => `
+  list.className = `filelist ${fileView}`;
+  list.innerHTML = files.map((f, i) => (fileView === "grid" ? `
+    <div class="file-card" data-i="${i}">
+      <div class="file-thumb" data-thumb="${i}"><span class="thumb-wait"></span></div>
+      <div class="file-body">
+        <span class="fname" title="${esc(f.name)}">${esc(f.name)}</span>
+        <span class="fsize">${fmtSize(f.size)}</span>
+      </div>
+      <div class="file-actions">
+        <button type="button" class="mini" data-act="del" data-i="${i}" title="Remove" aria-label="Remove">${xIcon()}</button>
+      </div>
+    </div>` : `
     <div class="file-row" data-i="${i}">
       <span class="fname" title="${esc(f.name)}">${esc(f.name)}</span>
       <span class="fsize">${fmtSize(f.size)}</span>
       <button type="button" class="mini" data-act="del" data-i="${i}" title="Remove" aria-label="Remove">${xIcon()}</button>
-    </div>`).join("") + `
+    </div>`)).join("") + `
     <button type="button" class="add-tile" id="addTile">
       <span class="add-plus">${plusIcon()}</span>
       <span>Add more files</span>
@@ -79,6 +92,36 @@ function renderFileList() {
   }));
 
   $("filesCount").textContent = files.length === 1 ? files[0].name : `${files.length} files`;
+  $("viewSwitch").hidden = files.length < 2;
+  $("viewSwitch").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.view === fileView));
+  if (fileView === "grid") loadFileThumbs();
+}
+
+// Page-1 thumbnails for the grid view: images preview directly, PDFs render
+// their first page through the engine. Cached per File so switching views
+// back and forth doesn't redo the work.
+async function loadFileThumbs() {
+  for (const el of [...$("fileList").querySelectorAll("[data-thumb]")]) {
+    const i = +el.dataset.thumb;
+    const f = files[i];
+    if (!f) continue;
+    const isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+    try {
+      if (!isPdf) {
+        if (thumbCache.get(f) === undefined) thumbCache.set(f, URL.createObjectURL(f));
+      } else if (thumbCache.get(f) === undefined) {
+        const fd = new FormData();
+        fd.append("files", f);
+        const res = await post("/api/thumbnails", fd);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Couldn't preview this file.");
+        thumbCache.set(f, data.src);
+      }
+      if (files[i] === f && el.isConnected) el.innerHTML = `<img src="${thumbCache.get(f)}" alt="">`;
+    } catch (_) {
+      if (el.isConnected) el.innerHTML = '<span class="thumb-error">?</span>';
+    }
+  }
 }
 
 function pickMoreFiles() {
@@ -110,6 +153,13 @@ dropzone.addEventListener("drop", (e) => {
   addFiles(e.dataTransfer.files);
 });
 $("startOverBtn").addEventListener("click", startOver);
+$("viewSwitch").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-view]");
+  if (!btn) return;
+  fileView = btn.dataset.view;
+  localStorage.setItem("medisort:fileView", fileView);
+  renderFileList();
+});
 
 // ---------- OCR review grid ----------
 
