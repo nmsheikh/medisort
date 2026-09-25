@@ -355,8 +355,6 @@ function claimRowFromUnit(u) {
     date: u.date || "", facility: u.facility || "", amount: u.amount || "",
   };
 }
-const blankClaimRow = () => claimRowFromUnit({});
-
 function renderClaimsGrid() {
   const table = $("claimsGrid");
   const head = `<tr><th>Line No.</th>${CLAIM_COLUMNS.map(([, label]) => `<th>${esc(label)}</th>`).join("")}</tr>`;
@@ -391,13 +389,6 @@ function renderDoneClaimsGrid() {
   table.innerHTML = head + body;
 }
 
-$("claimAddLine").addEventListener("click", () => { claimRows.push(blankClaimRow()); renderClaimsGrid(); });
-$("claimDelLine").addEventListener("click", () => {
-  const selected = $("claimsGrid").querySelector("tr.selected");
-  const i = selected ? +selected.dataset.i : claimRows.length - 1;
-  if (i >= 0) claimRows.splice(i, 1);
-  renderClaimsGrid();
-});
 $("claimCalc").addEventListener("click", () => {
   const total = claimRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
   $("claimTotal").textContent = `Total requested amount: ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -412,10 +403,12 @@ $("extractSortBtn").addEventListener("click", () => {
 // ---------- build & download the PDF ----------
 
 $("downloadPdfBtn").addEventListener("click", async () => {
-  if (medUnits.some((u) => !u.date)) return showError("Set the date for every page flagged for review.");
-  if (medUnits.some((u) => u.type === "other" || u.type === "not-medical")) {
-    return showError("Set the document type for every page flagged for review.");
-  }
+  // "Other (medical)"/"Not a medical document" are themselves valid, explicit
+  // choices - they only ever meant "flag this for a second look", never
+  // "download is blocked until you pick doctor/prescription/medicine instead".
+  // A date still matters for sorting a real (if uncategorized) bill, but not
+  // for a page that was marked as not being a medical document at all.
+  if (medUnits.some((u) => !u.date && u.type !== "not-medical")) return showError("Set the date for every page flagged for review.");
   showError("");
   $("downloadPdfBtn").disabled = true;
   $("downloadPdfBtn").textContent = "Building…";
