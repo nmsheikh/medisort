@@ -291,6 +291,19 @@ function renderClaimsGrid() {
   $("claimTotal").textContent = "";
 }
 
+// Read-only copy of the claims table shown on the done screen - same data,
+// no inputs, since the PDF is already built from it by that point.
+function renderDoneClaimsGrid() {
+  const table = $("doneClaimsGrid");
+  const head = `<tr><th>Line No.</th>${CLAIM_COLUMNS.map(([, label]) => `<th>${esc(label)}</th>`).join("")}</tr>`;
+  const body = claimRows.map((row, i) => `
+    <tr>
+      <td class="claim-line">${String(i + 1).padStart(4, "0")}</td>
+      ${CLAIM_COLUMNS.map(([key]) => `<td>${esc(row[key] || "")}</td>`).join("")}
+    </tr>`).join("");
+  table.innerHTML = head + body;
+}
+
 $("claimAddLine").addEventListener("click", () => { claimRows.push(blankClaimRow()); renderClaimsGrid(); });
 $("claimDelLine").addEventListener("click", () => {
   const selected = $("claimsGrid").querySelector("tr.selected");
@@ -331,6 +344,8 @@ $("downloadPdfBtn").addEventListener("click", async () => {
     const meta = `${name} · ${fmtSize(blob.size)} · ${medUnits.length} page${medUnits.length === 1 ? "" : "s"}`;
     $("stepReview").hidden = true;
     $("stepDone").hidden = false;
+    $("doneClaimsWrap").hidden = !claimRows.length;
+    if (claimRows.length) renderDoneClaimsGrid();
     if (DESKTOP) {
       // Desktop app: ask where to save with a native Save dialog (Tauri command
       // in src-tauri), same as pdforge's own desktop build.
@@ -351,6 +366,9 @@ $("downloadPdfBtn").addEventListener("click", async () => {
       $("saveBtn").href = downloadUrl;
       $("saveBtn").download = name;
       $("doneMeta").textContent = meta;
+      // Start the save immediately - the button stays as a manual re-download
+      // option in case a popup/download-manager blocker swallowed this click.
+      $("saveBtn").click();
     }
   } catch (e) {
     showError(e.message);

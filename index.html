@@ -74,11 +74,15 @@
   </div>
 
   <!-- Step 3: done -->
-  <div id="stepDone" class="step card center" hidden>
+  <div id="stepDone" class="step wide card center" hidden>
     <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
     <h2>All set</h2>
     <p class="saved-note" id="doneMeta"></p>
     <a class="primary" id="saveBtn" download>Download medical-records.pdf</a>
+    <div class="claims-wrap done-claims" id="doneClaimsWrap" hidden>
+      <p class="hint">Extracted claim data</p>
+      <div class="claims-scroll"><table class="claims-grid" id="doneClaimsGrid"></table></div>
+    </div>
     <button type="button" class="link" id="againBtn">Arrange more bills</button>
   </div>
 </main>

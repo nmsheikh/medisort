@@ -264,6 +264,7 @@ body[data-desktop="1"] .web-only { display: none !important; }
 }
 
 .claims-wrap { margin-top: 22px; }
+.done-claims { text-align: left; }
 .claims-wrap .picker-bar button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .claims-wrap .picker-bar button .ui { width: 14px; height: 14px; flex: none; }
 .claims-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 10px; }
