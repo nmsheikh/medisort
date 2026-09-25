@@ -24,10 +24,8 @@ const BILL_TYPE_LABELS = {
   other: "Other (medical)", "not-medical": "Not a medical document",
 };
 const CLAIM_COLUMNS = [
-  ["familyMember", "Family Member"], ["birthDate", "Birth Date"], ["gender", "Gender"],
-  ["doctorName", "Doctor Name"], ["qualification", "Doctor Qualification"], ["billNumber", "Bill Number"],
-  ["consultationDate", "Consultation Date"], ["billDate", "Bill Date"], ["natureOfClaim", "Nature of Claim"],
-  ["medicalAppliance", "Medical Appliance"], ["applicantRemark", "Applicant Remark"], ["facility", "Name of Pharmacy/Hospital/Laboratory"],
+  ["patientName", "Patient Name"], ["doctorName", "Doctor Name"], ["billNumber", "Bill Number"],
+  ["date", "Date (Consultation/Bill)"], ["facility", "Name of Pharmacy/Hospital/Laboratory"],
   ["amount", "Requested Amount"],
 ];
 
@@ -255,24 +253,19 @@ function renderMedicalReview() {
 
 function claimRowFromUnit(u) {
   return {
-    familyMember: "", birthDate: "", gender: "",
-    doctorName: u.doctorName || "", qualification: u.qualification || "", billNumber: u.billNumber || "",
-    consultationDate: (u.type === "doctor" || u.type === "prescription") ? (u.date || "") : "",
-    billDate: u.type === "medicine" ? (u.date || "") : "",
-    natureOfClaim: "", medicalAppliance: "", applicantRemark: "",
-    facility: u.facility || "", exceptionAllowed: false, amount: u.amount || "",
+    patientName: u.patientName || "", doctorName: u.doctorName || "", billNumber: u.billNumber || "",
+    date: u.date || "", facility: u.facility || "", amount: u.amount || "",
   };
 }
 const blankClaimRow = () => claimRowFromUnit({});
 
 function renderClaimsGrid() {
   const table = $("claimsGrid");
-  const head = `<tr><th>Line No.</th>${CLAIM_COLUMNS.map(([, label]) => `<th>${esc(label)}</th>`).join("")}<th>Exception Allowed</th></tr>`;
+  const head = `<tr><th>Line No.</th>${CLAIM_COLUMNS.map(([, label]) => `<th>${esc(label)}</th>`).join("")}</tr>`;
   const body = claimRows.map((row, i) => `
     <tr data-i="${i}">
       <td class="claim-line">${String(i + 1).padStart(4, "0")}</td>
       ${CLAIM_COLUMNS.map(([key]) => `<td><input data-field="${key}" value="${esc(row[key] || "")}"></td>`).join("")}
-      <td class="claim-check"><input type="checkbox" data-field="exceptionAllowed" ${row.exceptionAllowed ? "checked" : ""}></td>
     </tr>`).join("");
   table.innerHTML = head + body;
 

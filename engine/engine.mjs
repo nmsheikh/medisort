@@ -256,12 +256,20 @@ function extractDoctorName(text) {
   const m = t.match(/\b(?:[Dd][Rr]\.[ \t]*|[Dd][Rr][ \t]+|[Oo][Rr]\.[ \t]*)([A-Z][\w.]*(?:[ \t]+[A-Z][\w.]*){0,3})/);
   return m ? cleanDoctorName(m[1]) : "";
 }
-function extractQualification(text) {
+// Strips an honorific ("Mr./Mrs./Ms./Smt.") off a captured name - the label
+// match ("Patient Name: Mrs. X") routinely sweeps the title up with it.
+function cleanPersonName(raw) {
+  const s = (raw || "").trim().replace(/^(?:mr|mrs|ms|miss|master|smt|shri)\.?\s*/i, "").trim();
+  const name = s.replace(/[.,]$/, "").trim();
+  return /[A-Za-z]{2,}/.test(name) ? name : "";
+}
+
+// Only trusts an explicit "Patient Name"/"Name of Patient" label - a bare
+// "Name:" is too likely to grab the clinic's own name off the letterhead.
+function extractPatientName(text) {
   const t = text || "";
-  for (const q of QUALIFICATIONS) {
-    if (new RegExp(`\\b${q}\\b`, "i").test(t)) return q;
-  }
-  return "";
+  const m = t.match(/\b(?:patient'?s?\s*name|name of (?:the )?patient)\b\s*[:.]?\s*([^\n(]{2,60})/i);
+  return m ? cleanPersonName(m[1].split(/ {2,}|[|\t]/)[0]) : "";
 }
 
 // The "no./number/#" token is REQUIRED (not optional) - "Bill Cum Receipt" (a
@@ -326,10 +334,10 @@ function extractAmount(text) {
 function claimFields(text, type) {
   // Don't run bill-shaped regexes over a document that isn't a bill at all -
   // they can still coincidentally match noise and produce junk fields.
-  if (type === "not-medical") return { doctorName: "", qualification: "", billNumber: "", facility: "", amount: "" };
+  if (type === "not-medical") return { patientName: "", doctorName: "", billNumber: "", facility: "", amount: "" };
   return {
+    patientName: extractPatientName(text),
     doctorName: extractDoctorName(text),
-    qualification: extractQualification(text),
     billNumber: extractBillNumber(text),
     facility: extractFacilityName(text, type),
     amount: extractAmount(text),
