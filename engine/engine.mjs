@@ -532,12 +532,45 @@ async function firstPageThumb(fd) {
   }
 }
 
+// ---------- bigger on-demand preview (expand a file or a review-grid page) ----------
+// Unlike firstPageThumb (small, always page 1, used for the file-list grid),
+// this renders whichever page was asked for at real preview size, and applies
+// the same rotation the review grid already worked out - so what the person
+// sees here matches what will actually go into the PDF.
+
+async function pagePreview(fd) {
+  const f = fd.get("files");
+  if (!f) throw new ToolError("No file.");
+  const width = Math.min(1400, Math.max(200, parseInt(str(fd, "width", "1100"), 10) || 1100));
+  const rotation = ((parseInt(str(fd, "rotation", "0"), 10) || 0) % 360 + 360) % 360;
+  if (isPdfLike(f)) {
+    const pageNum = Math.max(1, parseInt(str(fd, "page", "1"), 10) || 1);
+    const doc = await openPdfjs(f);
+    try {
+      const page = await doc.getPage(pageNum);
+      const base = page.getViewport({ scale: 1 });
+      const canvas = await renderPage(page, width / base.width);
+      page.cleanup();
+      return json({ src: rotateCanvas(canvas, rotation).toDataURL("image/jpeg", 0.85) });
+    } finally {
+      closePdfjs(doc);
+    }
+  }
+  const bitmap = await createImageBitmap(f, { imageOrientation: "from-image" });
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  canvas.getContext("2d").drawImage(bitmap, 0, 0);
+  return json({ src: rotateCanvas(canvas, rotation).toDataURL("image/jpeg", 0.85) });
+}
+
 // ---------- router ----------
 
 const ROUTES = {
   "/api/analyze-medical-bills": analyzeMedicalBills,
   "/api/finalize-medical-bills": finalizeMedicalBills,
   "/api/thumbnails": firstPageThumb,
+  "/api/page-preview": pagePreview,
 };
 
 export async function handle(url, fd) {

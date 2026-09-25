@@ -91,6 +91,21 @@
   <p>Files are processed in memory on your own device and never uploaded. <a href="https://github.com/nmsheikh/medisort">Source on GitHub</a></p>
 </footer>
 
+<!-- Expanded page preview -->
+<div class="modal-backdrop" id="previewModal" hidden>
+  <div class="modal preview-modal" role="dialog" aria-modal="true" aria-labelledby="pvTitle">
+    <div class="preview-head">
+      <span class="preview-name" id="pvTitle"></span>
+      <button type="button" class="modal-close" id="pvCloseBtn" aria-label="Close"><svg class="ui" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div class="preview-stage" id="pvStage">
+      <img id="pvFull" alt="" hidden>
+      <div class="spinner" id="pvSpinner"></div>
+      <p class="pv-error" id="pvError" hidden></p>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="app.js"></script>
 </body>
 </html>

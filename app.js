@@ -61,6 +61,7 @@ function renderFileList() {
   list.className = `filelist ${fileView}`;
   list.innerHTML = files.map((f, i) => (fileView === "grid" ? `
     <div class="file-card" data-i="${i}">
+      <button type="button" class="expand" data-act="expand" data-i="${i}" title="Open a bigger preview" aria-label="Open a bigger preview of ${esc(f.name)}">${expandIcon()}</button>
       <div class="file-thumb" data-thumb="${i}"><span class="thumb-wait"></span></div>
       <div class="file-body">
         <span class="fname" title="${esc(f.name)}">${esc(f.name)}</span>
@@ -71,6 +72,7 @@ function renderFileList() {
       </div>
     </div>` : `
     <div class="file-row" data-i="${i}">
+      <button type="button" class="expand" data-act="expand" data-i="${i}" title="Open a bigger preview" aria-label="Open a bigger preview of ${esc(f.name)}">${expandIcon()}</button>
       <span class="fname" title="${esc(f.name)}">${esc(f.name)}</span>
       <span class="fsize">${fmtSize(f.size)}</span>
       <button type="button" class="mini" data-act="del" data-i="${i}" title="Remove" aria-label="Remove">${xIcon()}</button>
@@ -88,6 +90,7 @@ function renderFileList() {
     renderFileList();
     initMedicalReview();
   }));
+  list.querySelectorAll("[data-act='expand']").forEach((b) => b.addEventListener("click", () => openFilePreview(+b.dataset.i)));
 
   $("filesCount").textContent = files.length === 1 ? files[0].name : `${files.length} files`;
   $("viewSwitch").hidden = files.length < 2;
@@ -211,6 +214,86 @@ function plusIcon() {
 function xIcon() {
   return '<svg class="ui" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 }
+function expandIcon() {
+  return '<svg class="ui" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>';
+}
+
+// ---------- expanded page preview ----------
+
+let previewToken = 0;
+
+function openPreviewModal(title) {
+  $("pvTitle").textContent = title;
+  $("pvFull").hidden = true;
+  $("pvError").hidden = true;
+  $("pvSpinner").hidden = false;
+  $("previewModal").hidden = false;
+}
+
+function closePreviewModal() {
+  previewToken++;
+  $("previewModal").hidden = true;
+  $("pvFull").removeAttribute("src");
+}
+
+async function showPreview(srcPromise) {
+  const token = ++previewToken;
+  try {
+    const src = await srcPromise;
+    if (token !== previewToken) return;
+    $("pvFull").src = src;
+    $("pvFull").hidden = false;
+  } catch (e) {
+    if (token !== previewToken) return;
+    $("pvError").textContent = e.message;
+    $("pvError").hidden = false;
+  } finally {
+    if (token === previewToken) $("pvSpinner").hidden = true;
+  }
+}
+
+// A raw image previews directly from the source file - full resolution, no
+// engine round-trip. A PDF needs its first page rendered at preview size.
+function openFilePreview(i) {
+  const f = files[i];
+  if (!f) return;
+  openPreviewModal(f.name);
+  const isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+  if (!isPdf) return showPreview(Promise.resolve(URL.createObjectURL(f)));
+  showPreview((async () => {
+    const fd = new FormData();
+    fd.append("files", f);
+    fd.append("width", "1100");
+    const res = await post("/api/page-preview", fd);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't preview this file.");
+    return data.src;
+  })());
+}
+
+// A review-grid page already has a known source file, page and rotation from
+// OCR analysis - render it at preview size with that same rotation applied,
+// so what's shown here matches what will go into the PDF.
+function openUnitPreview(u) {
+  const f = files[u.fileIndex];
+  if (!f) return;
+  openPreviewModal(f.name);
+  showPreview((async () => {
+    const fd = new FormData();
+    fd.append("files", f);
+    fd.append("width", "1100");
+    fd.append("rotation", String(u.rotation || 0));
+    if (u.pageIndex !== null && u.pageIndex !== undefined) fd.append("page", String(u.pageIndex + 1));
+    const res = await post("/api/page-preview", fd);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't preview this page.");
+    return data.src;
+  })());
+}
+
+$("pvCloseBtn").addEventListener("click", closePreviewModal);
+$("previewModal").addEventListener("click", (e) => { if (e.target === $("previewModal")) closePreviewModal(); });
+window.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("previewModal").hidden) closePreviewModal(); });
 
 function renderMedicalReview() {
   const grid = $("pageGrid");
@@ -219,7 +302,10 @@ function renderMedicalReview() {
     const flagged = !u.date || u.type === "other" || notMedical;
     return `
     <div class="page med-page${flagged ? " needs-review" : ""}" data-i="${i}">
-      <button type="button" class="mini med-remove" data-act="remove-page" title="Not part of this batch - remove it" aria-label="Remove this page">${xIcon()}</button>
+      <div class="med-actions">
+        <button type="button" class="mini" data-act="expand-page" title="View this page bigger" aria-label="View this page bigger">${expandIcon()}</button>
+        <button type="button" class="mini" data-act="remove-page" title="Not part of this batch - remove it" aria-label="Remove this page">${xIcon()}</button>
+      </div>
       <img src="${u.thumb}" alt="Page ${i + 1}">
       ${flagged ? `<span class="badge med-flag">${eyeIcon()} ${notMedical ? "Not medical" : "Needs review"}</span>` : ""}
       <div class="med-fields">
@@ -253,6 +339,7 @@ function renderMedicalReview() {
       $("claimsWrap").hidden = true;
       $("downloadPdfBtn").hidden = true;
     });
+    card.querySelector("[data-act='expand-page']").addEventListener("click", () => openUnitPreview(medUnits[i]));
   });
 
   const flaggedCount = medUnits.filter((u) => !u.date || u.type === "other" || u.type === "not-medical").length;
